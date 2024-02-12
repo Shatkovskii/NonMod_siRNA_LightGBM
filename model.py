@@ -1,12 +1,13 @@
-from get_dataset import get_dataset
-
+import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import lightgbm as lgb
+
+from get_dataset import get_dataset
+from descriptors import Descriptors
 
 
 print('Loading data...')
-X, y = get_dataset(filename='Datasets/Ivan-non-mod_3.csv')
+X, y = get_dataset(filename='Datasets/Ivan-non-mod_3.csv', descriptors=Descriptors.pybiomed)
 
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -34,7 +35,7 @@ print('Starting training...')
 # train
 gbm = lgb.train(params,
                 train_data,
-                num_boost_round=500,
+                num_boost_round=300,
                 valid_sets=[valid_data])
 print()
 

@@ -1,9 +1,9 @@
-__all__ = ['generate_rdkit_descriptors',
-           'filter_sequences',
-           'seq_to_matrix_',
-           'SeQuant_encoding',
-           'generate_latent_representations',
-           'add_peptide_generated_descriptors']
+__all__ = [
+    'seq_to_matrix_',
+    'SeQuant_encoding',
+    'generate_latent_representations',
+    'aa_dict'
+]
 
 import random
 
