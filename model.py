@@ -7,7 +7,7 @@ from descriptors import Descriptors
 
 
 print('Loading data...')
-X, y = get_dataset(filename='Datasets/Ivan-non-mod_3.csv', descriptors=Descriptors.pybiomed)
+X, y = get_dataset(filename='Datasets/Denis-non-mod_4.csv', descriptors=Descriptors.pybiomed)
 
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -35,7 +35,7 @@ print('Starting training...')
 # train
 gbm = lgb.train(params,
                 train_data,
-                num_boost_round=300,
+                num_boost_round=1000,
                 valid_sets=[valid_data])
 print()
 

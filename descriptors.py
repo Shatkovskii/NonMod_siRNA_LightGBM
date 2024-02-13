@@ -40,14 +40,14 @@ class Rdkit:
             sequences_list = [sequences_list]
 
         encoded_senses = SeQuant_encoding(sequences_list=sequences_list,
-                                          polymer_type='protein',
+                                          polymer_type='RNA',
                                           descriptors=descriptors_set,
                                           num=96)
 
         x_senses = generate_latent_representations(sequences_list=encoded_senses,
                                                    sequant_encoded_sequences=encoded_senses,
-                                                   polymer_type='protein',
-                                                   path_to_model_folder='Models/proteins')
+                                                   polymer_type='RNA',
+                                                   path_to_model_folder='Models/nucleic_acids')
 
         return x_senses
 
@@ -88,7 +88,7 @@ class PyBioMed:
         container = []
         for sequence in sequences_list:
             seq_matrix = seq_to_matrix_(sequence=sequence,
-                                        polymer_type='protein',
+                                        polymer_type='RNA',
                                         descriptors=descriptors_set,
                                         num=max_length)
 
