@@ -1,6 +1,6 @@
+CDK_pywrapper==0.1.0
 keras==2.15.0
 lightgbm==4.3.0
-matplotlib==3.8.0
 numpy==1.23.5
 pandas==2.2.0
 peptides==0.3.2
