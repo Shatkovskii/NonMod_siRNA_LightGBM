@@ -7,10 +7,10 @@ from descriptors import Descriptors
 
 
 print('Loading data...')
-X, y = get_dataset(filename='Datasets/Denis-non-mod_4.csv', descriptors=Descriptors.pybiomed)
+X, y = get_dataset(filename='Datasets/Denis-non-mod_4.csv', descriptors=Descriptors.cdk)
 
 
-X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=256)
 
 print('Train:', len(X_train))
 print('Valid:', len(X_valid), end='\n\n')

@@ -1,6 +1,8 @@
 from rdkit import Chem
 from rdkit.Chem import rdMolDescriptors
 from PyBioMed.PyMolecule import connectivity
+from CDK_pywrapper import CDK
+
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
@@ -98,7 +100,50 @@ class PyBioMed:
         return np.array(container)
 
 
+class CDK_Descriptors:
+
+    @staticmethod
+    def generate_descriptors(normalize: tuple = (-1, 1), monomer_dict_: dict = None):
+        if monomer_dict_ is None:
+            monomer_dict_ = aa_dict
+
+        smiles_list = list(monomer_dict_.values())
+        mols = [Chem.AddHs(Chem.MolFromSmiles(smiles)) for smiles in smiles_list]
+
+        cdk = CDK()
+        desc_df = cdk.calculate(mols)
+
+        descriptor_names = desc_df.columns.to_list()
+        descriptors_set = [line.values for _, line in desc_df.iterrows()]
+        descriptors_set = np.array(descriptors_set)
+
+        sc = MinMaxScaler(feature_range=normalize)
+        scaled_array = sc.fit_transform(descriptors_set)
+        return pd.DataFrame(scaled_array, columns=descriptor_names, index=list(monomer_dict_.keys()))
+
+    @staticmethod
+    def encode_sequences(sequences_list, max_length=27):
+
+        descriptors_set = CDK_Descriptors.generate_descriptors()
+
+        if not isinstance(sequences_list, list):
+            sequences_list = [sequences_list]
+
+        container = []
+        for sequence in sequences_list:
+            seq_matrix = seq_to_matrix_(sequence=sequence,
+                                        polymer_type='RNA',
+                                        descriptors=descriptors_set,
+                                        num=max_length)
+
+            seq_matrix = np.array(seq_matrix).flatten()
+            container.append(seq_matrix)
+
+        return np.array(container)
+
+
 class Descriptors:
 
     rdkit = Rdkit
     pybiomed = PyBioMed
+    cdk = CDK_Descriptors
