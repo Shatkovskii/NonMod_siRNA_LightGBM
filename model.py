@@ -9,7 +9,7 @@ from force_field import ForceField
 
 print('Loading data...')
 X, y = get_dataset(filename='Datasets/Denis-non-mod_4.csv',
-                   descriptors=Descriptors.PaDEL,
+                   descriptors=Descriptors.BlueDesc,
                    force_field=ForceField.mmff94)
 
 

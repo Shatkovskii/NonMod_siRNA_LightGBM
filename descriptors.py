@@ -81,9 +81,32 @@ class PyBioMed:
         return pd.DataFrame(scaled_array, columns=descriptor_names, index=list(monomer_dict_.keys()))
 
     @staticmethod
+    def load_descriptors(normalize: tuple = (-1, 1), monomer_dict_: dict = None):
+        """PyBioMed иногда падает с ошибкой, поскольку не поддерживает новый numpy. В этом случае сгенерировать
+        дескрипторы не получится, так что придётся загружать из файла
+        """
+
+        if monomer_dict_ is None:
+            monomer_dict_ = aa_dict
+
+        desc_df = pd.read_excel('Datasets/Descriptors/pybiomed_descriptors.xlsx', index_col=0)
+
+        descriptor_names = desc_df.columns.to_list()
+        descriptors_set = [line.values for _, line in desc_df.iterrows()]
+        descriptors_set = np.array(descriptors_set)
+
+        sc = MinMaxScaler(feature_range=normalize)
+        scaled_array = sc.fit_transform(descriptors_set)
+
+        return pd.DataFrame(scaled_array, columns=descriptor_names, index=list(monomer_dict_.keys()))
+
+    @staticmethod
     def encode_sequences(sequences_list, max_length=27):
 
-        descriptors_set = PyBioMed.generate_descriptors()
+        try:
+            descriptors_set = PyBioMed.generate_descriptors()
+        except:
+            descriptors_set = PyBioMed.load_descriptors()
 
         if not isinstance(sequences_list, list):
             sequences_list = [sequences_list]
