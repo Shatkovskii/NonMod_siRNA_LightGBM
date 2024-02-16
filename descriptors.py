@@ -142,8 +142,59 @@ class CDK_Descriptors:
         return np.array(container)
 
 
+class Mordred:
+    @staticmethod
+    def generate_descriptors(normalize: tuple = (-1, 1), monomer_dict_: dict = None):
+        """
+        Mordred не завёлся локально, но нормально заработал в google.colab, поэтому просто сгенерил дескрипторы там.
+        Дескрипторы уже нормализованы на (-1, 1). Код:
+
+                import pandas as pd
+                import numpy as np
+                from sklearn.preprocessing import MinMaxScaler
+
+                smiles_list = list(aa_dict.values())
+                mols = [Chem.MolFromSmiles(smiles) for smiles in smiles_list]
+
+                calc = Calculator(descriptors, ignore_3D=False)
+                desc_df = calc.pandas(mols)
+
+                descriptor_names = desc_df.columns.to_list()
+                descriptors_set = [line.values for _, line in desc_df.iterrows()]
+                descriptors_set = np.array(descriptors_set)
+
+                normalize = (-1, 1)
+                sc = MinMaxScaler(feature_range=normalize)
+                scaled_array = sc.fit_transform(descriptors_set)
+                df = pd.DataFrame(scaled_array, columns=descriptor_names, index=list(aa_dict.keys()))
+        """
+
+        return pd.read_excel('Datasets/Descriptors/mordred_descriptors.xlsx', index_col=0)
+
+    @staticmethod
+    def encode_sequences(sequences_list, max_length=27):
+
+        descriptors_set = Mordred.generate_descriptors()
+
+        if not isinstance(sequences_list, list):
+            sequences_list = [sequences_list]
+
+        container = []
+        for sequence in sequences_list:
+            seq_matrix = seq_to_matrix_(sequence=sequence,
+                                        polymer_type='RNA',
+                                        descriptors=descriptors_set,
+                                        num=max_length)
+
+            seq_matrix = np.array(seq_matrix).flatten()
+            container.append(seq_matrix)
+
+        return np.array(container)
+
+
 class Descriptors:
 
     rdkit = Rdkit
     pybiomed = PyBioMed
     cdk = CDK_Descriptors
+    mordred = Mordred
