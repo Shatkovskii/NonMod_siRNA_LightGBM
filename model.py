@@ -7,7 +7,7 @@ from descriptors import Descriptors
 
 
 print('Loading data...')
-X, y = get_dataset(filename='Datasets/Denis-non-mod_4.csv', descriptors=Descriptors.mordred)
+X, y = get_dataset(filename='Datasets/Denis-non-mod_4.csv', descriptors=Descriptors.chemopy)
 
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=256)

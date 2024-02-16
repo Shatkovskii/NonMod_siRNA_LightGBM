@@ -15,10 +15,21 @@ def get_dataset(filename, descriptors,
                 efficacy_column='Efficacy, %',
                 max_sequence_length=None):
 
-    descriptors_allowed = ['Rdkit', 'PyBioMed', 'CDK_Descriptors', 'Mordred']
+    descriptors_allowed = {'Rdkit':     'rdkit',
+                           'PyBioMed':  'pybiomed',
+                           'CDK_':      'cdk',
+                           'Mordred':   'mordred',
+                           'Chemopy':   'chemopy'}
+
     if not(hasattr(descriptors, '__name__') and descriptors.__name__ in descriptors_allowed):
+        desc_names = ', '.join([
+            'Descriptors.'+descriptors_allowed[name]
+            for name in list(descriptors_allowed.keys())[:-1]
+        ])
+        desc_names += ' or Descriptors.' + descriptors_allowed[list(descriptors_allowed.keys())[-1]]
+
         log = ('Get Dataset Error:  unknown descriptors type\n'
-               '\t\t expected:  Descriptors.rdkit, Descriptors.pybiomed, Descriptors.cdk or Descriptors.mordred\n'
+               f'\t\t expected:  {desc_names}\n'
                f'\t\t got:       {descriptors}')
         print('\033[91m' + log + '\033[0m')
         exit(1)

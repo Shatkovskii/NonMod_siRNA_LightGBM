@@ -9,3 +9,7 @@ rdkit==2023.9.4
 scikit_learn==1.4.0
 tensorflow==2.15.0
 tensorflow_macos==2.15.0
+scikit-learn~=1.4.0
+bs4~=0.0.2
+beautifulsoup4~=4.12.3
+requests~=2.31.0
