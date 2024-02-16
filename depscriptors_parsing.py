@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from sequant_funcs import aa_dict
+from force_field import ForceField
 
 
 class SCBDD:
@@ -17,7 +18,7 @@ class SCBDD:
     PaDEL = 'padel_desc'
 
 
-def parse_scbdd(descriptors, monomer_dict=None):
+def parse_scbdd(descriptors, monomer_dict=None, force_field=None):
     if monomer_dict is None:
         monomer_dict = aa_dict
 
@@ -34,14 +35,54 @@ def parse_scbdd(descriptors, monomer_dict=None):
                f'\t\tgot:        {descriptors}')
         print('\033[91m' + log + '\033[0m')
         exit(1)
+
+    elif descriptors == SCBDD.BlueDesc and force_field not in [
+        ForceField.mmff94, ForceField.mmff94s, ForceField.ghemical, ForceField.gaff, ForceField.uff
+    ]:
+        log = ('Parse SCBDD Error:  unknown force field\n'
+               '\t\texpected:   ForceField.mmff94, ForceField.mmff94s, ForceField.ghemical, ForceField.gaff or '
+               'ForceField.uff\n'
+               f'\t\tgot:        {force_field}')
+        print('\033[91m' + log + '\033[0m')
+        exit(1)
+
+    elif descriptors == SCBDD.PaDEL and force_field not in [ForceField.mmff94, ForceField.mm2, None]:
+        log = ('Parse SCBDD Error:  unknown force field\n'
+               '\t\texpected:   ForceField.mmff94, ForceField.mm2 or None\n'
+               f'\t\tgot:        {force_field}')
+        print('\033[91m' + log + '\033[0m')
+        exit(1)
+
     else:
-        print('Start parsing {} descriptors'.format(descriptors_allowed[descriptors]), end='\n\n')
+        print('Start parsing {} descriptors'.format(descriptors_allowed[descriptors]))
+        if descriptors in [SCBDD.BlueDesc, SCBDD.PaDEL]:
+            print('Force Field:', force_field, end='\n\n')
+        else:
+            print()
 
     url = 'http://www.scbdd.com/%s/index/' % descriptors
     filename = 'Datasets/Descriptors/%s_descriptors.xlsx' % descriptors_allowed[descriptors].lower()
 
+    data = {'Smiles': 'c1ccccc1'}
+    if descriptors in SCBDD.Chemopy:
+        data['check_box_d'] = '3D'
+
+    elif descriptors == SCBDD.BlueDesc:
+        data['forcefield'] = force_field
+        filename = filename.replace('.xlsx', '_%s.xlsx' % force_field)
+
+    elif descriptors == SCBDD.PaDEL:
+
+        data['check_box_d'] = '3D'
+        if force_field in [ForceField.mm2, ForceField.mmff94]:
+            data['convert3d'] = 'Yes (use {} forcefield)'.format(force_field.upper())
+            filename = filename.replace('.xlsx', '_%s.xlsx' % force_field)
+        else:
+            data['convert3d'] = 'No'
+            filename = filename.replace('.xlsx', '_none_ff.xlsx')
+
     # Parse descriptors names
-    response = requests.post(url, data={'Smiles': 'c1ccccc1', 'check_box_d': '3D'})
+    response = requests.post(url, data=data)
     soup = BeautifulSoup(response.text, 'html.parser')
     info_table = soup.find('table', class_='table table-bordered table-condensed')
     desc_lines = info_table.find_all('tr', class_='altrow')
@@ -52,18 +93,22 @@ def parse_scbdd(descriptors, monomer_dict=None):
 
     # Parse descriptors from monomer_dict
     for monomer_name, smiles in monomer_dict.items():
-        data = {'Smiles': smiles, 'check_box_d': '3D'}
+        data['Smiles'] = smiles
         response = requests.post(url, data=data)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        info_table = soup.find('table', class_='table table-bordered table-condensed')
-        desc_lines = info_table.find_all('tr', class_='altrow')
-
-        for line in desc_lines:
-            columns = [col.get_text(strip=True) for col in line.find_all('td')]
-            desc_name = columns[1]
-            desc_value = columns[2]
-            desc_df.loc[monomer_name, desc_name] = desc_value
+        try:
+            info_table = soup.find('table', class_='table table-bordered table-condensed')
+            desc_lines = info_table.find_all('tr', class_='altrow')
+            for line in desc_lines:
+                columns = [col.get_text(strip=True) for col in line.find_all('td')]
+                desc_name = columns[1]
+                desc_value = columns[2]
+                desc_df.loc[monomer_name, desc_name] = desc_value
+            status = '\033[92m' + 'done' + '\033[0m'
+        except:
+            status = '\033[93m' + 'descriptors not found' + '\033[0m'
+            desc_df = desc_df[desc_df.index != monomer_name]
 
         # Save parsed descriptors dataset
         writer = pd.ExcelWriter(filename)
@@ -71,4 +116,5 @@ def parse_scbdd(descriptors, monomer_dict=None):
         writer._save()
 
         log = '{}/{}. {} '.format(list(monomer_dict.keys()).index(monomer_name)+1, len(monomer_dict), monomer_name)
-        print(log + '\033[92m' + 'done' + '\033[0m')
+        print(log + '\033[92m' + status + '\033[0m')
+    print()

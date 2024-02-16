@@ -4,10 +4,13 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 from get_dataset import get_dataset
 from descriptors import Descriptors
+from force_field import ForceField
 
 
 print('Loading data...')
-X, y = get_dataset(filename='Datasets/Denis-non-mod_4.csv', descriptors=Descriptors.chemopy)
+X, y = get_dataset(filename='Datasets/Denis-non-mod_4.csv',
+                   descriptors=Descriptors.PaDEL,
+                   force_field=ForceField.mmff94)
 
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=256)

@@ -8,10 +8,10 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 from sequant_funcs import aa_dict, seq_to_matrix_, SeQuant_encoding, generate_latent_representations
-from depscriptors_parsing import SCBDD, parse_scbdd
+from depscriptors_parsing import SCBDD, ForceField, parse_scbdd
 
 
-class Rdkit:
+class RDKit:
 
     @staticmethod
     def generate_descriptors(normalize: tuple = (-1, 1), monomer_dict_: dict = None):
@@ -37,7 +37,7 @@ class Rdkit:
     @staticmethod
     def encode_sequences(sequences_list, max_length=96):
 
-        descriptors_set = Rdkit.generate_descriptors()
+        descriptors_set = RDKit.generate_descriptors()
 
         if not isinstance(sequences_list, list):
             sequences_list = [sequences_list]
@@ -246,10 +246,137 @@ class Chemopy:
         return np.array(container)
 
 
+class BlueDesc:
+    @staticmethod
+    def parse_descriptors():
+        """ BlueDesc изначально написан на java, чтобы долго не возиться с имплементацией было решено пока,
+        в качестве временного решения, просто запарсить дескрипторы с сайта http://www.scbdd.com/blue_desc/index/
+        см. модуль descriptors_parsing.py
+
+        В качестве доп. параметра при расчёте дескрипторов нужно передать значение ForceField
+        """
+
+        parse_scbdd(descriptors=SCBDD.BlueDesc, force_field=ForceField.mmff94)
+        parse_scbdd(descriptors=SCBDD.BlueDesc, force_field=ForceField.mmff94s)
+        parse_scbdd(descriptors=SCBDD.BlueDesc, force_field=ForceField.ghemical)
+        parse_scbdd(descriptors=SCBDD.BlueDesc, force_field=ForceField.gaff)
+        parse_scbdd(descriptors=SCBDD.BlueDesc, force_field=ForceField.uff)
+
+    @staticmethod
+    def generate_descriptors(normalize: tuple = (-1, 1), monomer_dict_: dict = None, force_field=None):
+
+        """BlueDesc дескрипторы для словаря мономеров aa_dict запаршены с сайта с сайта:
+        http://www.scbdd.com/blue_desc/index/ в пяти вариациях, с ForceField mmff94, mmff94s, ghemical, gaff, uff
+        Здесь мы их нормируем на диапазоне normalize
+        """
+
+        if monomer_dict_ is None:
+            monomer_dict_ = aa_dict
+
+        filename = 'Datasets/Descriptors/bluedesc_descriptors_%s.xlsx' % force_field
+        desc_df = pd.read_excel(filename, index_col=0)
+
+        descriptor_names = desc_df.columns.to_list()
+        descriptors_set = [line.values for _, line in desc_df.iterrows()]
+        descriptors_set = np.array(descriptors_set)
+        monomer_dict_ = {
+            monomer: monomer_dict_[monomer]
+            for monomer in monomer_dict_ if monomer in desc_df.index
+        }
+
+        sc = MinMaxScaler(feature_range=normalize)
+        scaled_array = sc.fit_transform(descriptors_set)
+
+        return pd.DataFrame(scaled_array, columns=descriptor_names, index=list(monomer_dict_.keys()))
+
+    @staticmethod
+    def encode_sequences(sequences_list, max_length=27, force_field=None):
+
+        descriptors_set = BlueDesc.generate_descriptors(force_field=force_field)
+
+        if not isinstance(sequences_list, list):
+            sequences_list = [sequences_list]
+
+        container = []
+        for sequence in sequences_list:
+            seq_matrix = seq_to_matrix_(sequence=sequence,
+                                        polymer_type='RNA',
+                                        descriptors=descriptors_set,
+                                        num=max_length)
+
+            seq_matrix = np.array(seq_matrix).flatten()
+            container.append(seq_matrix)
+
+        return np.array(container)
+
+
+class PaDEL:
+    @staticmethod
+    def parse_descriptors():
+        """ BlueDesc изначально написан на java, чтобы долго не возиться с имплементацией было решено пока,
+        в качестве временного решения, просто запарсить дескрипторы с сайта http://www.scbdd.com/padel_desc/index/
+        см. модуль descriptors_parsing.py
+
+        В качестве доп. параметра при расчёте дескрипторов нужно передать значение ForceField
+        """
+
+        parse_scbdd(descriptors=SCBDD.PaDEL, force_field=ForceField.mmff94)
+        parse_scbdd(descriptors=SCBDD.PaDEL, force_field=ForceField.mm2)
+        parse_scbdd(descriptors=SCBDD.PaDEL, force_field=None)
+
+    @staticmethod
+    def generate_descriptors(normalize: tuple = (-1, 1), monomer_dict_: dict = None, force_field=None):
+
+        """BlueDesc дескрипторы для словаря мономеров aa_dict запаршены с сайта с сайта:
+        http://www.scbdd.com/blue_desc/index/ в трёх вариациях, с ForceField mmff94, mm2, None
+        Здесь мы их нормируем на диапазоне normalize
+        """
+
+        if monomer_dict_ is None:
+            monomer_dict_ = aa_dict
+
+        if force_field is not None:
+            filename = 'Datasets/Descriptors/padel_descriptors_%s.xlsx' % force_field
+        else:
+            filename = 'Datasets/Descriptors/padel_descriptors_none_ff.xlsx'
+        desc_df = pd.read_excel(filename, index_col=0)
+
+        descriptor_names = desc_df.columns.to_list()
+        descriptors_set = [line.values for _, line in desc_df.iterrows()]
+        descriptors_set = np.array(descriptors_set)
+
+        sc = MinMaxScaler(feature_range=normalize)
+        scaled_array = sc.fit_transform(descriptors_set)
+
+        return pd.DataFrame(scaled_array, columns=descriptor_names, index=list(monomer_dict_.keys()))
+
+    @staticmethod
+    def encode_sequences(sequences_list, max_length=27, force_field=None):
+
+        descriptors_set = PaDEL.generate_descriptors(force_field=force_field)
+
+        if not isinstance(sequences_list, list):
+            sequences_list = [sequences_list]
+
+        container = []
+        for sequence in sequences_list:
+            seq_matrix = seq_to_matrix_(sequence=sequence,
+                                        polymer_type='RNA',
+                                        descriptors=descriptors_set,
+                                        num=max_length)
+
+            seq_matrix = np.array(seq_matrix).flatten()
+            container.append(seq_matrix)
+
+        return np.array(container)
+
+
 class Descriptors:
 
-    rdkit = Rdkit
-    pybiomed = PyBioMed
-    cdk = CDK_
-    mordred = Mordred
-    chemopy = Chemopy
+    RDKit = RDKit
+    PyBioMed = PyBioMed
+    CDK = CDK_
+    Mordred = Mordred
+    Chemopy = Chemopy
+    BlueDesc = BlueDesc
+    PaDEL = PaDEL

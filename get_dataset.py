@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from force_field import ForceField
 
 
 def minmax_normalization(values):
@@ -13,24 +14,43 @@ def get_dataset(filename, descriptors,
                 antisense_column='AntiSense',
                 concentration_column='Concentration, nM',
                 efficacy_column='Efficacy, %',
-                max_sequence_length=None):
+                max_sequence_length=None,
+                force_field=None):
 
-    descriptors_allowed = {'Rdkit':     'rdkit',
-                           'PyBioMed':  'pybiomed',
-                           'CDK_':      'cdk',
-                           'Mordred':   'mordred',
-                           'Chemopy':   'chemopy'}
+    descriptors_allowed = ['RDKit',
+                           'PyBioMed',
+                           'CDK_',
+                           'Mordred',
+                           'Chemopy',
+                           'BlueDesc',
+                           'PaDEL']
 
     if not(hasattr(descriptors, '__name__') and descriptors.__name__ in descriptors_allowed):
         desc_names = ', '.join([
-            'Descriptors.'+descriptors_allowed[name]
-            for name in list(descriptors_allowed.keys())[:-1]
+            'Descriptors.' + name.replace('_', '') for name in descriptors_allowed[:-1]
         ])
-        desc_names += ' or Descriptors.' + descriptors_allowed[list(descriptors_allowed.keys())[-1]]
+        desc_names += ' or Descriptors.' + descriptors_allowed[-1]
 
         log = ('Get Dataset Error:  unknown descriptors type\n'
                f'\t\t expected:  {desc_names}\n'
                f'\t\t got:       {descriptors}')
+        print('\033[91m' + log + '\033[0m')
+        exit(1)
+
+    elif descriptors.__name__ == 'BlueDesc' and force_field not in [
+        ForceField.mmff94, ForceField.mmff94s, ForceField.ghemical, ForceField.gaff, ForceField.uff
+    ]:
+        log = ('Get Dataset Error:  unknown force_field value\n'
+               '\t\t expected:  ForceField.mmff94, ForceField.mmff94s, ForceField.ghemical, ForceField.gaff or '
+               'ForceField.uff\n'
+               f'\t\t got:       {force_field}')
+        print('\033[91m' + log + '\033[0m')
+        exit(1)
+
+    elif descriptors.__name__ == 'PaDEL' and force_field not in [ForceField.mmff94, ForceField.mm2, None]:
+        log = ('Get Dataset Error:  unknown force_field value\n'
+               '\t\t expected:  ForceField.mmff94, ForceField.mm2 or None\n'
+               f'\t\t got:       {force_field}')
         print('\033[91m' + log + '\033[0m')
         exit(1)
     else:
@@ -50,8 +70,14 @@ def get_dataset(filename, descriptors,
         max_sequence_length = get_max_sequence_length(dataframe=df, sense_column=sense_column,
                                                       antisense_column=antisense_column)
 
-    x_senses = descriptors.encode_sequences(sequences_list=senses, max_length=max_sequence_length)
-    x_antisenses = descriptors.encode_sequences(sequences_list=antisenses, max_length=max_sequence_length)
+    if descriptors.__name__ in ['BlueDesc', 'PaDEL']:
+        x_senses = descriptors.encode_sequences(sequences_list=senses, max_length=max_sequence_length,
+                                                force_field=force_field)
+        x_antisenses = descriptors.encode_sequences(sequences_list=antisenses, max_length=max_sequence_length,
+                                                    force_field=force_field)
+    else:
+        x_senses = descriptors.encode_sequences(sequences_list=senses, max_length=max_sequence_length)
+        x_antisenses = descriptors.encode_sequences(sequences_list=antisenses, max_length=max_sequence_length)
 
     x = list()
     for i in range(len(x_senses)):
