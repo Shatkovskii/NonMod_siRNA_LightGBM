@@ -55,6 +55,8 @@ def get_dataset(filename, descriptors,
         exit(1)
     else:
         print('Descriptors:', descriptors.__name__)
+        if descriptors.__name__ in ['BlueDesc', 'PaDEL']:
+            print('ForceField: ', force_field)
 
     df = pd.read_csv(filename)
 
