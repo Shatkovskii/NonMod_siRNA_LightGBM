@@ -2,15 +2,15 @@ import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-from get_dataset import get_dataset
-from descriptors import Descriptors
-from force_field import ForceField
+from data_processing.get_dataset import get_dataset
+from data_processing.descriptors import Descriptors
+from data_processing.force_field import ForceField
 
 
 print('Loading data...')
-X, y = get_dataset(filename='Datasets/Denis-non-mod_4.csv',
+X, y = get_dataset(filename='data/datasets/unmodified/original_data/Denis-non-mod_4.csv',
                    descriptors=Descriptors.BlueDesc,
-                   force_field=ForceField.ghemical)
+                   force_field=ForceField.gaff)
 
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=256)

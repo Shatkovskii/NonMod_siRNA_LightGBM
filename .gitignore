@@ -1,0 +1,4 @@
+.idea
+venv
+data/saved_models/model.txt
+models/cross_validation.py
