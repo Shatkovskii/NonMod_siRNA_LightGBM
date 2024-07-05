@@ -8,9 +8,7 @@ from data_processing.force_field import ForceField
 
 
 print('Loading data...')
-X, y = get_dataset(filename='data/datasets/unmodified/original_data/Denis-non-mod_4.csv',
-                   descriptors=Descriptors.BlueDesc,
-                   force_field=ForceField.gaff)
+X, y = get_dataset(modified=True, descriptors=Descriptors.RDKit)
 
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=256)

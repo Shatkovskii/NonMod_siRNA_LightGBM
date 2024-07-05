@@ -1,6 +1,10 @@
+import json
+
 import pandas as pd
 import numpy as np
+
 from data_processing.force_field import ForceField
+from data_processing.descriptors import Descriptors
 
 
 def minmax_normalization(values):
@@ -9,7 +13,9 @@ def minmax_normalization(values):
     return [(x-min_x)/delta * 2 - 1 for x in values]
 
 
-def get_dataset(filename, descriptors,
+def get_dataset(modified: bool,
+                descriptors: Descriptors,
+                filename=None,
                 sense_column='Sense',
                 antisense_column='AntiSense',
                 concentration_column='Concentration, nM',
@@ -58,6 +64,23 @@ def get_dataset(filename, descriptors,
         if descriptors.__name__ in ['BlueDesc', 'PaDEL']:
             print('ForceField: ', force_field)
 
+    if modified is True:
+
+        match descriptors:
+
+            case Descriptors.RDKit:
+                x = pd.read_csv("data/datasets/modified/desciptors/mod-rdkit-1.csv")
+            case _:
+                print(f"{descriptors} ещё не готовы, попробуйте другие, например RDKit")
+                exit(0)
+
+        y = pd.read_csv("data/datasets/modified/desciptors/mod-target-1.csv")
+
+        print('\nX.shape', x.shape)
+        print('y.shape', y.shape, end='\n\n')
+
+        return x, y
+
     df = pd.read_csv(filename)
 
     senses = df[sense_column].to_list()
@@ -95,6 +118,65 @@ def get_dataset(filename, descriptors,
     return x, y
 
 
+def get_dataset_for_modified(descriptors=Descriptors.RDKit):
+
+    df = pd.read_csv("../data/datasets/modified/original_data/ready_to_go_2.csv")
+
+    senses = [json.loads(line) for line in df.Sense]
+    antisenses = [json.loads(line) for line in df.AntiSense]
+
+    conc = df["siRNA concentration"].to_list()
+    efficacy = df["Efficacy, %"].to_list()
+    trans_duration = df["Duration after transfection"].to_list()
+
+    # Label Encoding was used for the following columns
+    # Might be needed to replace with One-Hot Encoding
+
+    experiment = df["Experiment used to check activity"].to_list()
+    target_gene = df["Target gene"].to_list()
+    cell = df["Cell or Organism used"].to_list()
+    trans_method = df["Transfection method"].to_list()
+
+    # Normalization
+
+    norm_effs = minmax_normalization(efficacy)
+    norm_concs = minmax_normalization(conc)
+    norm_trans_duration = minmax_normalization(trans_duration)
+
+    # Max length of sequence is 27
+
+    # Can't kekulize mol:
+    #   Nc1ccN(CC(=O)N(CC)Cc1c[nH]nn1)c(=O)n1
+    #   Nc1ccN(C1CC2(O(P(O)(O)(=O)))CC3CC3(O)C2O1)c(=O)n1
+    #   n1cnc2[nH]cnc(=O)c21
+
+    max_sequence_length = 27
+    x_senses = descriptors.encode_modified_sequences(sequences_list=senses, max_length=max_sequence_length)
+    x_antisenses = descriptors.encode_modified_sequences(sequences_list=antisenses, max_length=max_sequence_length)
+
+    x = list()
+    for i in range(len(x_senses)):
+        m = np.hstack([x_senses[i], x_antisenses[i]])
+        m = np.append(m, norm_concs[i])
+        m = np.append(m, norm_trans_duration[i])
+        m = np.append(m, experiment[i])
+        m = np.append(m, target_gene[i])
+        m = np.append(m, cell[i])
+        m = np.append(m, trans_method[i])
+        x.append(m)
+
+    x = np.vstack(x)
+    y = np.array(norm_effs)
+
+    pd.DataFrame(x).to_csv("../data/datasets/modified/desciptors/mod-rdkit-1.csv", index=False, header=False)
+    pd.DataFrame(y).to_csv("../data/datasets/modified/desciptors/mod-target-1.csv", index=False, header=False)
+
+    print('\nX.shape', x.shape)
+    print('y.shape', y.shape, end='\n\n')
+
+    return x, y
+
+
 def get_max_sequence_length(database_filename=None, dataframe=None,
                             sense_column='Sense', antisense_column='AntiSense'):
 
@@ -107,3 +189,6 @@ def get_max_sequence_length(database_filename=None, dataframe=None,
     seqs = dataframe[sense_column].to_list() + dataframe[antisense_column].to_list()
     seqs = [len(i) for i in seqs]
     return max(seqs)
+
+
+# get_dataset_for_modified()

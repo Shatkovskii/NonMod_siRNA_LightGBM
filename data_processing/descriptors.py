@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
-from sequant_funcs import aa_dict, seq_to_matrix_, SeQuant_encoding, generate_latent_representations
-from data_processing.depscriptors_parsing import SCBDD, ForceField, parse_scbdd
+from .sequant_funcs import aa_dict, seq_to_matrix_, SeQuant_encoding, generate_latent_representations
+from .depscriptors_parsing import SCBDD, ForceField, parse_scbdd
 
 
 class RDKit:
@@ -52,6 +52,38 @@ class RDKit:
                                                    polymer_type='RNA',
                                                    path_to_model_folder='../data/saved_models/nucleic_acids')
 
+        return x_senses
+
+    @staticmethod
+    def encode_modified_sequences(sequences_list, max_length=27):
+
+        descriptor_names = list(rdMolDescriptors.Properties.GetAvailableProperties())
+        get_descriptors = rdMolDescriptors.Properties(descriptor_names)
+        num_descriptors = len(descriptor_names)
+
+        sc = MinMaxScaler(feature_range=(-1, 1))
+        x_senses = np.empty((0, 43*27), float)
+
+        for seq in sequences_list:
+            descriptors_set = np.empty((0, num_descriptors), float)
+            for smiles in seq:
+                molecule = Chem.MolFromSmiles(smiles)
+                try:
+                    descriptors = np.array(get_descriptors.ComputeProperties(molecule))
+                except:
+                    print(smiles)
+                    continue
+                descriptors = descriptors.reshape((-1, num_descriptors))
+                descriptors_set = np.append(descriptors_set, descriptors, axis=0)
+
+            scaled_array = sc.fit_transform(descriptors_set)
+            scaled_df = pd.DataFrame(scaled_array, columns=descriptor_names)
+            while scaled_df.shape[0] < 27:
+                scaled_df.loc[scaled_df.shape[0]] = [0] * 43
+
+            array = np.array(scaled_df)
+            array = array.flatten()
+            x_senses = np.vstack((x_senses, array))
         return x_senses
 
 
