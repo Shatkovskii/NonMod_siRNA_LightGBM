@@ -2,3 +2,6 @@
 venv
 data/saved_models/model.txt
 models/cross_validation.py
+data/datasets/modified/descriptors/m
+data/datasets/modified/descriptors/mod-cdk-1-no-normalization.csv
+data/datasets/modified/descriptors/mod-cdk-2.csv

@@ -253,6 +253,9 @@ class PyBioMed:
 
 class CDK_:
 
+    num_descriptors = 223
+    descriptor_names = ['Fsp3', 'nSmallRings', 'nAromRings', 'nRingBlocks', 'nAromBlocks', 'nRings3', 'nRings4', 'nRings5', 'nRings6', 'nRings7', 'nRings8', 'nRings9', 'tpsaEfficiency', 'Zagreb', 'XLogP', 'WPATH', 'WPOL', 'WTPT-1', 'WTPT-2', 'WTPT-3', 'WTPT-4', 'WTPT-5', 'MW', 'VAdjMat', 'VABC', 'TopoPSA', 'LipinskiFailures', 'nRotB', 'topoShape', 'PetitjeanNumber', 'MDEC-11', 'MDEC-12', 'MDEC-13', 'MDEC-14', 'MDEC-22', 'MDEC-23', 'MDEC-24', 'MDEC-33', 'MDEC-34', 'MDEC-44', 'MDEO-11', 'MDEO-12', 'MDEO-22', 'MDEN-11', 'MDEN-12', 'MDEN-13', 'MDEN-22', 'MDEN-23', 'MDEN-33', 'MLogP', 'nAtomLAC', 'nAtomP', 'nAtomLC', 'khs.sLi', 'khs.ssBe', 'khs.ssssBe', 'khs.ssBH', 'khs.sssB', 'khs.ssssB', 'khs.sCH3', 'khs.dCH2', 'khs.ssCH2', 'khs.tCH', 'khs.dsCH', 'khs.aaCH', 'khs.sssCH', 'khs.ddC', 'khs.tsC', 'khs.dssC', 'khs.aasC', 'khs.aaaC', 'khs.ssssC', 'khs.sNH3', 'khs.sNH2', 'khs.ssNH2', 'khs.dNH', 'khs.ssNH', 'khs.aaNH', 'khs.tN', 'khs.sssNH', 'khs.dsN', 'khs.aaN', 'khs.sssN', 'khs.ddsN', 'khs.aasN', 'khs.ssssN', 'khs.sOH', 'khs.dO', 'khs.ssO', 'khs.aaO', 'khs.sF', 'khs.sSiH3', 'khs.ssSiH2', 'khs.sssSiH', 'khs.ssssSi', 'khs.sPH2', 'khs.ssPH', 'khs.sssP', 'khs.dsssP', 'khs.sssssP', 'khs.sSH', 'khs.dS', 'khs.ssS', 'khs.aaS', 'khs.dssS', 'khs.ddssS', 'khs.sCl', 'khs.sGeH3', 'khs.ssGeH2', 'khs.sssGeH', 'khs.ssssGe', 'khs.sAsH2', 'khs.ssAsH', 'khs.sssAs', 'khs.sssdAs', 'khs.sssssAs', 'khs.sSeH', 'khs.dSe', 'khs.ssSe', 'khs.aaSe', 'khs.dssSe', 'khs.ddssSe', 'khs.sBr', 'khs.sSnH3', 'khs.ssSnH2', 'khs.sssSnH', 'khs.ssssSn', 'khs.sI', 'khs.sPbH3', 'khs.ssPbH2', 'khs.sssPbH', 'khs.ssssPb', 'Kier1', 'Kier2', 'Kier3', 'HybRatio', 'nHBDon', 'nHBAcc', 'fragC', 'FMF', 'ECCEN', 'SP-0', 'SP-1', 'SP-2', 'SP-3', 'SP-4', 'SP-5', 'SP-6', 'SP-7', 'VP-0', 'VP-1', 'VP-2', 'VP-3', 'VP-4', 'VP-5', 'VP-6', 'VP-7', 'SPC-4', 'SPC-5', 'SPC-6', 'VPC-4', 'VPC-5', 'VPC-6', 'SC-3', 'SC-4', 'SC-5', 'SC-6', 'VC-3', 'VC-4', 'VC-5', 'VC-6', 'SCH-3', 'SCH-4', 'SCH-5', 'SCH-6', 'SCH-7', 'VCH-3', 'VCH-4', 'VCH-5', 'VCH-6', 'VCH-7', 'C1SP1', 'C2SP1', 'C1SP2', 'C2SP2', 'C3SP2', 'C1SP3', 'C2SP3', 'C3SP3', 'C4SP3', 'bpol', 'nB', 'BCUTw-1l', 'BCUTw-1h', 'BCUTc-1l', 'BCUTc-1h', 'BCUTp-1l', 'BCUTp-1h', 'nBase', 'ATSp1', 'ATSp2', 'ATSp3', 'ATSp4', 'ATSp5', 'ATSm1', 'ATSm2', 'ATSm3', 'ATSm4', 'ATSm5', 'ATSc1', 'ATSc2', 'ATSc3', 'ATSc4', 'ATSc5', 'nAtom', 'nAromBond', 'naAromAtom', 'apol', 'ALogP', 'ALogp2', 'AMR', 'nAcid', 'JPLogP']
+
     @staticmethod
     def generate_descriptors(normalize: tuple = (-1, 1), monomer_dict_: dict = None):
         if monomer_dict_ is None:
@@ -291,6 +294,59 @@ class CDK_:
             container.append(seq_matrix)
 
         return np.array(container)
+
+    @staticmethod
+    def descriptors_from_smiles(smiles):
+
+        mol = [Chem.AddHs(Chem.MolFromSmiles(smiles))]
+        cdk = CDK()
+
+        try:
+            descriptors = cdk.calculate(mol).loc[0].values
+        except Exception as ex:
+            print(ex)
+            print(smiles, end='\n\n')
+            return None
+
+        descriptors = list(descriptors)
+        return descriptors
+
+    @staticmethod
+    def encode_sequences_from_unique(sequences_list, max_length=27, normalize=True):
+
+        unique_desc = load_unique_descriptors(descriptors=CDK_)
+
+        # Create empty array where monomer descriptors will be kept
+        x_senses = np.empty((0, max_length * CDK_.num_descriptors), float)
+
+        for i, seq in enumerate(sequences_list, 1):
+            descriptors_set = np.empty((0, CDK_.num_descriptors), float)
+            print(f"{i}.", end=' ')
+            for smiles in seq:
+                try:
+                    descriptors = unique_desc[smiles]
+                    descriptors = np.array(descriptors)
+                except Exception as ex:
+                    print(ex)
+                    print(smiles, end='\n\n')
+                    break
+                descriptors = descriptors.reshape((-1, CDK_.num_descriptors))
+                descriptors_set = np.append(descriptors_set, descriptors, axis=0)
+            print("\033[92m" + "done" + "\033[0m")
+            if normalize is True:
+                sc = MinMaxScaler(feature_range=(-1, 1))
+                scaled_array = sc.fit_transform(descriptors_set)
+            else:
+                scaled_array = descriptors_set
+
+            scaled_df = pd.DataFrame(scaled_array, columns=CDK_.descriptor_names)
+            while scaled_df.shape[0] < max_length:
+                scaled_df.loc[scaled_df.shape[0]] = [0] * CDK_.num_descriptors
+
+            array = np.array(scaled_df)
+            array = array.flatten()
+            x_senses = np.vstack((x_senses, array))
+        return x_senses
 
 
 class Mordred:

@@ -50,5 +50,5 @@ def get_unique_descriptors(descriptors, save=False):
 
 
 if __name__ == "__main__":
-    # get_unique_descriptors(Descriptors.PyBioMed, save=True)
+    get_unique_descriptors(Descriptors.CDK, save=True)
     ...
