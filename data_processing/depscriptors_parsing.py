@@ -2,8 +2,8 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-from .sequant_funcs import aa_dict
-from .force_field import ForceField
+from data_processing.sequant_funcs import aa_dict
+from data_processing.force_field import ForceField
 
 
 class SCBDD:

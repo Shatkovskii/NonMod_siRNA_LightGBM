@@ -69,12 +69,14 @@ def get_dataset(modified: bool,
         match descriptors:
 
             case Descriptors.RDKit:
-                x = pd.read_csv("data/datasets/modified/desciptors/mod-rdkit-1.csv")
+                x = pd.read_csv("data/datasets/modified/desciptors/mod-rdkit-1.csv", header=None)
+            case Descriptors.PyBioMed:
+                x = pd.read_csv("data/datasets/modified/desciptors/mod-pybiomed-2.csv", header=None)
             case _:
-                print(f"{descriptors} ещё не готовы, попробуйте другие, например RDKit")
+                print(f"{descriptors} ещё не готовы, попробуйте другие, например RDKit или PyBioMed")
                 exit(0)
 
-        y = pd.read_csv("data/datasets/modified/desciptors/mod-target-1.csv")
+        y = pd.read_csv("data/datasets/modified/desciptors/mod-target-1.csv", header=None)
 
         print('\nX.shape', x.shape)
         print('y.shape', y.shape, end='\n\n')
@@ -118,7 +120,7 @@ def get_dataset(modified: bool,
     return x, y
 
 
-def get_dataset_for_modified(descriptors=Descriptors.RDKit):
+def get_dataset_for_modified(descriptors=Descriptors.RDKit, normalize=True, preload_unique=True):
 
     df = pd.read_csv("../data/datasets/modified/original_data/ready_to_go_2.csv")
 
@@ -139,9 +141,10 @@ def get_dataset_for_modified(descriptors=Descriptors.RDKit):
 
     # Normalization
 
-    norm_effs = minmax_normalization(efficacy)
-    norm_concs = minmax_normalization(conc)
-    norm_trans_duration = minmax_normalization(trans_duration)
+    if normalize is True:
+        efficacy = minmax_normalization(efficacy)
+        conc = minmax_normalization(conc)
+        trans_duration = minmax_normalization(trans_duration)
 
     # Max length of sequence is 27
 
@@ -151,14 +154,27 @@ def get_dataset_for_modified(descriptors=Descriptors.RDKit):
     #   n1cnc2[nH]cnc(=O)c21
 
     max_sequence_length = 27
-    x_senses = descriptors.encode_modified_sequences(sequences_list=senses, max_length=max_sequence_length)
-    x_antisenses = descriptors.encode_modified_sequences(sequences_list=antisenses, max_length=max_sequence_length)
+
+    if preload_unique is False:
+        x_senses = descriptors.encode_modified_sequences(
+            sequences_list=senses, max_length=max_sequence_length, normalize=normalize
+        )
+        x_antisenses = descriptors.encode_modified_sequences(
+            sequences_list=antisenses, max_length=max_sequence_length, normalize=normalize
+        )
+    else:
+        x_senses = descriptors.encode_sequences_from_unique(
+            sequences_list=senses, max_length=max_sequence_length, normalize=normalize
+        )
+        x_antisenses = descriptors.encode_sequences_from_unique(
+            sequences_list=antisenses, max_length=max_sequence_length, normalize=normalize
+        )
 
     x = list()
     for i in range(len(x_senses)):
         m = np.hstack([x_senses[i], x_antisenses[i]])
-        m = np.append(m, norm_concs[i])
-        m = np.append(m, norm_trans_duration[i])
+        m = np.append(m, conc[i])
+        m = np.append(m, trans_duration[i])
         m = np.append(m, experiment[i])
         m = np.append(m, target_gene[i])
         m = np.append(m, cell[i])
@@ -166,10 +182,12 @@ def get_dataset_for_modified(descriptors=Descriptors.RDKit):
         x.append(m)
 
     x = np.vstack(x)
-    y = np.array(norm_effs)
+    y = np.array(efficacy)
 
-    pd.DataFrame(x).to_csv("../data/datasets/modified/desciptors/mod-rdkit-1.csv", index=False, header=False)
-    pd.DataFrame(y).to_csv("../data/datasets/modified/desciptors/mod-target-1.csv", index=False, header=False)
+    file_path = "../data/datasets/modified/desciptors/"
+    filename = "mod-pybiomed-2.csv"
+
+    pd.DataFrame(x).to_csv(file_path + filename, index=False, header=False)
 
     print('\nX.shape', x.shape)
     print('y.shape', y.shape, end='\n\n')
@@ -191,4 +209,5 @@ def get_max_sequence_length(database_filename=None, dataframe=None,
     return max(seqs)
 
 
-# get_dataset_for_modified()
+if __name__ == "__main__":
+    get_dataset_for_modified(descriptors=Descriptors.PyBioMed, normalize=True)

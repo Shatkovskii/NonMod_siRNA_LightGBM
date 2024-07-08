@@ -7,8 +7,9 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
-from .sequant_funcs import aa_dict, seq_to_matrix_, SeQuant_encoding, generate_latent_representations
-from .depscriptors_parsing import SCBDD, ForceField, parse_scbdd
+from data_processing.sequant_funcs import aa_dict, seq_to_matrix_, SeQuant_encoding, generate_latent_representations
+from data_processing.depscriptors_parsing import SCBDD, ForceField, parse_scbdd
+from data_processing.load_unqiue import load_unique_descriptors
 
 
 class RDKit:
@@ -55,14 +56,14 @@ class RDKit:
         return x_senses
 
     @staticmethod
-    def encode_modified_sequences(sequences_list, max_length=27):
+    def encode_modified_sequences(sequences_list, max_length=27, normalize=True):
 
         descriptor_names = list(rdMolDescriptors.Properties.GetAvailableProperties())
         get_descriptors = rdMolDescriptors.Properties(descriptor_names)
         num_descriptors = len(descriptor_names)
 
         sc = MinMaxScaler(feature_range=(-1, 1))
-        x_senses = np.empty((0, 43*27), float)
+        x_senses = np.empty((0, num_descriptors*max_length), float)
 
         for seq in sequences_list:
             descriptors_set = np.empty((0, num_descriptors), float)
@@ -76,7 +77,11 @@ class RDKit:
                 descriptors = descriptors.reshape((-1, num_descriptors))
                 descriptors_set = np.append(descriptors_set, descriptors, axis=0)
 
-            scaled_array = sc.fit_transform(descriptors_set)
+            if normalize is True:
+                scaled_array = sc.fit_transform(descriptors_set)
+            else:
+                scaled_array = descriptors_set
+
             scaled_df = pd.DataFrame(scaled_array, columns=descriptor_names)
             while scaled_df.shape[0] < 27:
                 scaled_df.loc[scaled_df.shape[0]] = [0] * 43
@@ -88,6 +93,10 @@ class RDKit:
 
 
 class PyBioMed:
+
+    # Get names of PyBioMed descriptors, obtain their amount
+    descriptor_names = list(connectivity._connectivity.keys())
+    num_descriptors = len(descriptor_names)
 
     @staticmethod
     def generate_descriptors(normalize: tuple = (-1, 1), monomer_dict_: dict = None):
@@ -154,6 +163,92 @@ class PyBioMed:
             container.append(seq_matrix)
 
         return np.array(container)
+
+    @staticmethod
+    def descriptors_from_smiles(smiles):
+        molecule = Chem.MolFromSmiles(smiles)
+        try:
+            descriptors = list(connectivity.GetConnectivity(molecule).values())
+        except Exception as ex:
+            print(ex)
+            print(smiles, end='\n\n')
+            return None
+
+        descriptors = list(descriptors)
+        # descriptors = descriptors.reshape((-1, PyBioMed.num_descriptors))
+        return descriptors
+
+    @staticmethod
+    def encode_modified_sequences(sequences_list, max_length=27, normalize=True):
+
+        # Create empty array where monomer descriptors will be kept
+        x_senses = np.empty((0, max_length * PyBioMed.num_descriptors), float)
+
+        for seq in sequences_list:
+            descriptors_set = np.empty((0, PyBioMed.num_descriptors), float)
+            for smiles in seq:
+                molecule = Chem.MolFromSmiles(smiles)
+                try:
+                    descriptors = list(connectivity.GetConnectivity(molecule).values())
+                    descriptors = np.array(descriptors)
+                except Exception as ex:
+                    print(ex)
+                    print(smiles, end='\n\n')
+                    continue
+                descriptors = descriptors.reshape((-1, PyBioMed.num_descriptors))
+                descriptors_set = np.append(descriptors_set, descriptors, axis=0)
+
+            if normalize is True:
+                sc = MinMaxScaler(feature_range=(-1, 1))
+                scaled_array = sc.fit_transform(descriptors_set)
+            else:
+                scaled_array = descriptors_set
+
+            scaled_df = pd.DataFrame(scaled_array, columns=PyBioMed.descriptor_names)
+            while scaled_df.shape[0] < max_length:
+                scaled_df.loc[scaled_df.shape[0]] = [0] * PyBioMed.num_descriptors
+
+            array = np.array(scaled_df)
+            array = array.flatten()
+            x_senses = np.vstack((x_senses, array))
+        return x_senses
+
+    @staticmethod
+    def encode_sequences_from_unique(sequences_list, max_length=27, normalize=True):
+
+        unique_desc = load_unique_descriptors(descriptors=PyBioMed)
+
+        # Create empty array where monomer descriptors will be kept
+        x_senses = np.empty((0, max_length * PyBioMed.num_descriptors), float)
+
+        for i, seq in enumerate(sequences_list, 1):
+            descriptors_set = np.empty((0, PyBioMed.num_descriptors), float)
+            print(f"{i}.", end=' ')
+            for smiles in seq:
+                try:
+                    descriptors = unique_desc[smiles]
+                    descriptors = np.array(descriptors)
+                except Exception as ex:
+                    print(ex)
+                    print(smiles, end='\n\n')
+                    break
+                descriptors = descriptors.reshape((-1, PyBioMed.num_descriptors))
+                descriptors_set = np.append(descriptors_set, descriptors, axis=0)
+            print("\033[92m" + "done" + "\033[0m")
+            if normalize is True:
+                sc = MinMaxScaler(feature_range=(-1, 1))
+                scaled_array = sc.fit_transform(descriptors_set)
+            else:
+                scaled_array = descriptors_set
+
+            scaled_df = pd.DataFrame(scaled_array, columns=PyBioMed.descriptor_names)
+            while scaled_df.shape[0] < max_length:
+                scaled_df.loc[scaled_df.shape[0]] = [0] * PyBioMed.num_descriptors
+
+            array = np.array(scaled_df)
+            array = array.flatten()
+            x_senses = np.vstack((x_senses, array))
+        return x_senses
 
 
 class CDK_:

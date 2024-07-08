@@ -8,7 +8,7 @@ from data_processing.force_field import ForceField
 
 
 print('Loading data...')
-X, y = get_dataset(modified=True, descriptors=Descriptors.RDKit)
+X, y = get_dataset(modified=True, descriptors=Descriptors.PyBioMed)
 
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=256)
@@ -41,8 +41,8 @@ gbm = lgb.train(params,
 print()
 
 # save model to file
-print('Saving model...')
-gbm.save_model('model.txt')
+# print('Saving model...')
+# gbm.save_model('model.txt')
 
 # predict
 print('Starting predicting...', end='\n\n')
