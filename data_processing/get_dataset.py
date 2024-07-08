@@ -184,7 +184,7 @@ def get_dataset_for_modified(descriptors=Descriptors.RDKit, normalize=True, prel
     x = np.vstack(x)
     y = np.array(efficacy)
 
-    file_path = "../data/datasets/modified/desciptors/"
+    file_path = "../data/datasets/modified/descriptors/"
     filename = "mod-pybiomed-2.csv"
 
     pd.DataFrame(x).to_csv(file_path + filename, index=False, header=False)
@@ -210,4 +210,5 @@ def get_max_sequence_length(database_filename=None, dataframe=None,
 
 
 if __name__ == "__main__":
-    get_dataset_for_modified(descriptors=Descriptors.PyBioMed, normalize=True)
+    # get_dataset_for_modified(descriptors=Descriptors.PyBioMed, normalize=True)
+    ...

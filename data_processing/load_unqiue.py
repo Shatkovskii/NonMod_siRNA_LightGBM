@@ -2,7 +2,7 @@ import pandas as pd
 
 
 def load_unique_descriptors(descriptors):
-    filepath = "../data/datasets/modified/desciptors/unique_smiles/"
+    filepath = "../data/datasets/modified/descriptors/unique_smiles/"
     filename = f"unique_{descriptors.__name__.lower()}_descriptors.csv"
     df = pd.read_csv(filepath + filename)
     unique_desc = {}

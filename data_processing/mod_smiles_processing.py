@@ -44,7 +44,7 @@ def get_unique_descriptors(descriptors, save=False):
         df.loc[df.shape[0]] = [smiles] + desc_list
 
     if save is True:
-        filepath = "../data/datasets/modified/desciptors/unique_smiles/"
+        filepath = "../data/datasets/modified/descriptors/unique_smiles/"
         filename = f"unique_{descriptors.__name__.lower()}_descriptors.csv"
         df.to_csv(filepath + filename, index=False)
 
