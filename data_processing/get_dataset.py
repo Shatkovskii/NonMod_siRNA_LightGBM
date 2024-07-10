@@ -120,7 +120,7 @@ def get_dataset(modified: bool,
     return x, y
 
 
-def get_dataset_for_modified(descriptors=Descriptors.RDKit, normalize=True, preload_unique=True):
+def get_dataset_for_modified(descriptors=Descriptors.RDKit, normalize=True, preload_unique=True, filename=None):
 
     df = pd.read_csv("../data/datasets/modified/original_data/ready_to_go_2.csv")
 
@@ -185,7 +185,8 @@ def get_dataset_for_modified(descriptors=Descriptors.RDKit, normalize=True, prel
     y = np.array(efficacy)
 
     file_path = "../data/datasets/modified/descriptors/"
-    filename = "mod-cdk-2.csv"
+    if filename is None:
+        filename = "mod-mordred-1-no-normalization.csv"
 
     pd.DataFrame(x).to_csv(file_path + filename, index=False, header=False)
 
@@ -210,5 +211,8 @@ def get_max_sequence_length(database_filename=None, dataframe=None,
 
 
 if __name__ == "__main__":
-    get_dataset_for_modified(descriptors=Descriptors.CDK, normalize=True)
+    get_dataset_for_modified(descriptors=Descriptors.Mordred, normalize=False, filename="mod-mordred-1-no-normalization.csv")
+    get_dataset_for_modified(descriptors=Descriptors.Mordred, normalize=True, filename="mod-mordred-2.csv")
+    get_dataset_for_modified(descriptors=Descriptors.Chemopy, normalize=False, filename="mod-chemopy-1-no-normalization.csv")
+    get_dataset_for_modified(descriptors=Descriptors.Chemopy, normalize=True, filename="mod-chemopy-2.csv")
     ...
